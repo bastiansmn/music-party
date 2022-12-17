@@ -1,0 +1,10 @@
+.idea
+*.iml
+
+**/.env
+
+# Build files
+**/node_modules
+**/target
+**/out
+**/dist
