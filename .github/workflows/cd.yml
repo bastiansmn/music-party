@@ -1,0 +1,70 @@
+name: MP CD
+
+on:
+  push:
+    branches:
+      - master
+
+jobs:
+  deploy-server:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Login and push to container registry
+        run: |
+          echo ${{ secrets.DOCKERHUB_TOKEN }} | docker login -u ${{ secrets.DOCKERHUB_USERNAME }} --password-stdin
+          docker build -t ${{ secrets.DOCKERHUB_USERNAME }}/music-party:server-latest vp-api
+          docker push ${{ secrets.DOCKERHUB_USERNAME }}/music-party:server-latest
+
+      - name: Copy docker-compose.server.yml file to vps
+        uses: appleboy/scp-action@master
+        with:
+          host: ${{ secrets.HOST }}
+          username: ${{ secrets.USERNAME }}
+          key: ${{ secrets.PRIVATE_KEY }}
+          source: docker/docker-compose.server.yml
+          target: /apps/music-party
+          strip_components: 1
+
+      - name: Deploy using ssh
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.HOST }}
+          username: ${{ secrets.USERNAME }}
+          key: ${{ secrets.PRIVATE_KEY }}
+          port: 22
+          script: |
+            cd /apps/music-party
+            docker compose -f docker-compose.server.yml down
+            docker pull ${{ secrets.DOCKERHUB_USERNAME }}/music-party:server-latest
+            echo "" > .env
+            echo "PORT=${{ secrets.PORT }}" >> .env
+            echo "DB_USERNAME=${{ secrets.DB_USERNAME }}" >> .env
+            echo "DB_PASSWORD=${{ secrets.DB_PASSWORD }}" >> .env
+            echo "DB_NAME=${{ secrets.DB_NAME }}" >> .env
+            echo "DB_URL=${{ secrets.DB_URL }}" >> .env
+            export $(grep -v '^#' .env | xargs)
+            docker compose -f docker-compose.server.yml up -d --build
+
+  deploy-client:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Use Node.js 16
+        uses: actions/setup-node@v2
+        with:
+          node-version: 16.x
+
+      - run: cd mp-ui && npm i && npm run build
+
+      - name: Copy dist files to vps
+        uses: appleboy/scp-action@master
+        with:
+          host: ${{ secrets.HOST }}
+          username: ${{ secrets.USERNAME }}
+          key: ${{ secrets.PRIVATE_KEY }}
+          source: vp-ui/dist/*
+          target: /var/www/html/music-party
+          strip_components: 2

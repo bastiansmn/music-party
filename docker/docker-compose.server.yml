@@ -1,0 +1,37 @@
+version: "3.9"
+
+services:
+
+  # Service for the database
+  mp-db:
+    container_name: mp-db
+    image: postgres:latest
+    environment:
+      POSTGRES_USER: ${DB_USERNAME}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB: ${DB_NAME}
+    restart: always
+    volumes:
+      - db-data:/var/lib/postgresql/data
+
+  # Service for the backend
+  mp-api:
+    container_name: mp-api
+    image: bastiansmn/music-party:server-latest
+    environment:
+      PORT: ${PORT}
+      DB_USERNAME: ${DB_USERNAME}
+      DB_PASSWORD: ${DB_PASSWORD}
+      DB_NAME: ${DB_NAME}
+      DB_URL: ${DB_URL}
+    ports:
+      - "${PORT}:${PORT}"
+    depends_on:
+      - mp-db
+
+volumes:
+  db-data:
+
+networks:
+  default:
+    name: apps-network
