@@ -14,7 +14,7 @@ jobs:
       - name: Login and push to container registry
         run: |
           echo ${{ secrets.DOCKERHUB_TOKEN }} | docker login -u ${{ secrets.DOCKERHUB_USERNAME }} --password-stdin
-          docker build -t ${{ secrets.DOCKERHUB_USERNAME }}/music-party:server-latest vp-api
+          docker build -t ${{ secrets.DOCKERHUB_USERNAME }}/music-party:server-latest mp-api
           docker push ${{ secrets.DOCKERHUB_USERNAME }}/music-party:server-latest
 
       - name: Copy docker-compose.server.yml file to vps
@@ -65,6 +65,6 @@ jobs:
           host: ${{ secrets.HOST }}
           username: ${{ secrets.USERNAME }}
           key: ${{ secrets.PRIVATE_KEY }}
-          source: vp-ui/dist/*
+          source: mp-ui/dist/*
           target: /var/www/html/music-party
           strip_components: 2
