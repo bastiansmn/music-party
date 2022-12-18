@@ -1,10 +1,13 @@
 <script setup lang="ts">
+import ReloadPWA from "@/components/ReloadPWA/reload-pwa.component";
+
 defineProps<{
   msg: string;
 }>();
 </script>
 
 <template>
+  <ReloadPWA />
   <div class="greetings">
     <h1 class="green">{{ msg }}</h1>
     <h3>
